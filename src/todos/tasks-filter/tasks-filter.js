@@ -1,5 +1,6 @@
 import './tasks-filter.css';
 import PropTypes from 'prop-types';
+import className from 'classnames';
 
 function TasksFilter({ onFilterChange, filter }) {
   const buttons = [
@@ -8,19 +9,13 @@ function TasksFilter({ onFilterChange, filter }) {
     { name: 'completed', label: 'Completed' },
   ];
 
-  const btnItems = buttons.map(({ name, label }) => {
-    let className = '';
-    if (filter === name) {
-      className = 'selected';
-    }
-    return (
-      <li key={name}>
-        <button className={className} onClick={() => onFilterChange(name)} type="button">
-          {label}
-        </button>
-      </li>
-    );
-  });
+  const btnItems = buttons.map(({ name, label }) => (
+    <li key={name}>
+      <button className={className({ selected: filter === name })} onClick={() => onFilterChange(name)} type="button">
+        {label}
+      </button>
+    </li>
+  ));
 
   return <ul className="filters">{btnItems}</ul>;
 }

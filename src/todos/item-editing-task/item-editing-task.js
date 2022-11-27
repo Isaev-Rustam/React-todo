@@ -13,36 +13,38 @@ class ItemEditingTask extends Component {
     this.refInput.current.focus();
   }
 
-  handleSubmit = (e) => {
-    e.preventDefault();
+  handlerKeyDown = (e) => {
     const { value } = this.state;
-    const { onFormatLabel } = this.props;
-    onFormatLabel(value);
+    const { onFormatLabel, onEditing } = this.props;
+    if (e.key === 'Enter') {
+      onFormatLabel(value);
+    }
+    if (e.key === 'Escape') {
+      onEditing();
+    }
   };
 
-  handleChange = (e) => {
+  handlerChange = (e) => {
     this.setState({ value: e.target.value });
   };
 
   blur = () => {
-    const { value } = this.state;
-    const { onFormatLabel } = this.props;
-    onFormatLabel(value);
+    const { onEditing } = this.props;
+    onEditing();
   };
 
   render() {
     const { value } = this.state;
     return (
-      <form onSubmit={this.handleSubmit}>
-        <input
-          type="text"
-          className="edit"
-          value={value}
-          onChange={this.handleChange}
-          onBlur={this.blur}
-          ref={this.refInput}
-        />
-      </form>
+      <input
+        type="text"
+        className="edit"
+        value={value}
+        onKeyDown={this.handlerKeyDown}
+        onChange={this.handlerChange}
+        onBlur={this.blur}
+        ref={this.refInput}
+      />
     );
   }
 }
