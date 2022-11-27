@@ -1,140 +1,136 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import './app.css';
 import { formatDistanceToNow } from 'date-fns';
 
-import TaskList from '../task-list';
-import ItemAddForm from '../item-add-form';
+import TaskList from 'todos/task-list';
+
+import ItemAddTask from '../item-add-task';
 import Footer from '../footer';
+import initialState from '../default-state-applications';
 
 const optionsFormatDistanceToNow = { includeSeconds: true };
 const getId = () => Math.floor(Math.random() * 10 ** 10).toString();
 
-export default class App extends Component {
-  static createTodoItem(label) {
-    const addingTime = new Date().toString();
-    return {
-      done: false,
-      editing: false,
-      id: getId(),
-      label,
-      addingTime,
-      timeToNow: 'less than 2 seconds',
-    };
-  }
+export default function App() {
+  const [todoData, setTodoData] = useState([]);
+  const [filter, setFilter] = useState('all');
 
-  static filter(items, filter) {
-    const match = {
-      all() {
-        return items;
-      },
-      active() {
-        return items.filter((item) => !item.done);
-      },
-      completed() {
-        return items.filter((item) => item.done);
-      },
-    };
-    return match[filter] ? match[filter]() : items;
-  }
+  const UPDATE_INTERVAL = 4000;
 
-  static reformatStateTodoData = (todoData, id, key) =>
-    todoData.map((el) => (el.id === id ? { ...el, [key]: !el[key] } : el));
+  useEffect(() => {
+    const todos = App.getDataLocalStorage('todo');
+    if (todos) {
+      setTodoData(todos.todoData);
+      setFilter(todos.filter);
+    } else {
+      setTodoData(initialState.todoData);
+      setFilter(initialState.filter);
+    }
+  }, []);
 
-  updateInterval = 4000;
+  useEffect(() => {
+    localStorage.setItem('todo', JSON.stringify({ todoData, filter }));
+  }, [todoData, filter]);
 
-  state = {
-    todoData: [],
-    filter: 'all',
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTodoData((data) =>
+        data.map((task) => {
+          const timeToNow = formatDistanceToNow(task.time.taskAddTime, optionsFormatDistanceToNow);
+          return { ...task, time: { ...task.time, timeToNow } };
+        })
+      );
+    }, UPDATE_INTERVAL);
+
+    return () => clearInterval(id);
+  }, []);
+
+  const addTask = (label, deadline) => {
+    const newItem = App.createTodoItem(label, deadline);
+    setTodoData((b) => [newItem, ...b]);
   };
 
-  componentDidMount() {
-    this.setState({
-      todoData: [
-        App.createTodoItem('Completed task'),
-        App.createTodoItem('Editing task'),
-        App.createTodoItem('Active task'),
-      ],
-    });
-    const tick = () => {
-      this.tickTimer();
-      this.timerId = setTimeout(tick, this.updateInterval);
-    };
-    this.timerId = setTimeout(tick, this.updateInterval);
-  }
-
-  componentWillUnmount() {
-    clearTimeout(this.timerId);
-  }
-
-  tickTimer = () => {
-    this.setState(({ todoData }) => ({
-      todoData: todoData.map((task) => {
-        const timeToNow = formatDistanceToNow(new Date(task.addingTime), optionsFormatDistanceToNow);
-
-        return { ...task, timeToNow };
-      }),
-    }));
+  const deleteTask = (id) => {
+    setTodoData((data) => data.filter((item) => item.id !== id));
   };
 
-  addTask = (label) => {
-    const newItem = App.createTodoItem(label);
-    this.setState(({ todoData }) => ({ todoData: [newItem, ...todoData] }));
+  const onEditing = (id) => {
+    setTodoData((data) => App.toggleStateTodoData(data, id, 'editing'));
   };
 
-  deleteTask = (id) => {
-    this.setState(({ todoData }) => ({ todoData: todoData.filter((item) => item.id !== id) }));
+  const onToggleDone = (id) => {
+    setTodoData((data) => App.toggleStateTodoData(data, id, 'done'));
   };
 
-  onEditing = (id) => {
-    this.setState(({ todoData }) => ({
-      todoData: App.reformatStateTodoData(todoData, id, 'editing'),
-    }));
+  const onFormatLabel = (id, label) => {
+    setTodoData((data) => data.map((el) => (el.id === id ? { ...el, label, editing: !el.editing } : el)));
   };
 
-  onToggleDone = (id) => {
-    this.setState(({ todoData }) => ({
-      todoData: App.reformatStateTodoData(todoData, id, 'done'),
-    }));
+  const onFilterChange = (a) => {
+    setFilter(() => a);
   };
 
-  onFormatLabel = (id, label) => {
-    this.setState(({ todoData }) => ({
-      todoData: todoData.map((el) => (el.id === id ? { ...el, label, editing: !el.editing } : el)),
-    }));
+  const onClearCompletedTasks = () => {
+    setTodoData((data) => data.filter((item) => !item.done));
   };
 
-  onFilterChange = (filter) => {
-    this.setState(() => ({ filter }));
-  };
-
-  onClearCompletedTasks = () => {
-    this.setState(({ todoData }) => ({ todoData: todoData.filter((item) => !item.done) }));
-  };
-
-  render() {
-    const { todoData, filter } = this.state;
-    const isVisibleItems = App.filter(todoData, filter);
-    const isCompletedTasksCounter = `${todoData.filter((item) => !item.done).length}`;
-
-    return (
-      <section className="todoapp">
-        <ItemAddForm onAddTask={this.addTask} />
-        <section className="main">
-          <TaskList
-            todos={isVisibleItems}
-            onToggleDone={this.onToggleDone}
-            onEditing={this.onEditing}
-            onDeleted={this.deleteTask}
-            onFormatLabel={this.onFormatLabel}
-          />
-          <Footer
-            onFilterChange={this.onFilterChange}
-            filter={filter}
-            onClearCompletedTasks={this.onClearCompletedTasks}
-            isCompletedTasksCounter={isCompletedTasksCounter}
-          />
-        </section>
-      </section>
+  const onUpdateTime = (id, deadline, isCounting) => {
+    setTodoData((data) =>
+      data.map((el) => (el.id === id ? { ...el, time: { ...el.time, deadline, isCounting } } : el))
     );
-  }
+  };
+
+  const isVisibleItems = App.filter(todoData, filter);
+  const completedTasksCount = App.completedTasksCount(todoData);
+
+  return (
+    <section className="todoapp">
+      <ItemAddTask onAddTask={addTask} />
+      <section className="main">
+        <TaskList
+          todos={isVisibleItems}
+          onToggleDone={onToggleDone}
+          onEditing={onEditing}
+          onDeleted={deleteTask}
+          onFormatLabel={onFormatLabel}
+          onUpdateTime={onUpdateTime}
+        />
+        <Footer
+          onFilterChange={onFilterChange}
+          filter={filter}
+          onClearCompletedTasks={onClearCompletedTasks}
+          isCompletedTasksCounter={completedTasksCount}
+        />
+      </section>
+    </section>
+  );
 }
+
+App.createTodoItem = (label, deadline) => ({
+  id: getId(),
+  done: false,
+  editing: false,
+  label,
+  time: {
+    taskAddTime: Date.now(),
+    timeToNow: 'less than 2 seconds',
+    deadline,
+  },
+});
+App.completedTasksCount = (ar) => `${ar.filter((item) => !item.done).length}`;
+App.filter = (items, filter) => {
+  const match = {
+    all() {
+      return items;
+    },
+    active() {
+      return items.filter((item) => !item.done);
+    },
+    completed() {
+      return items.filter((item) => item.done);
+    },
+  };
+  return match[filter] ? match[filter]() : items;
+};
+App.toggleStateTodoData = (data, id, key) => data.map((el) => (el.id === id ? { ...el, [key]: !el[key] } : el));
+App.getDataLocalStorage = (key) => JSON.parse(localStorage.getItem(key));

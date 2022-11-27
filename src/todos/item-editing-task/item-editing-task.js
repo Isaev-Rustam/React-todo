@@ -1,50 +1,36 @@
-import { Component, createRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './item-editing-task.css';
 import PropTypes from 'prop-types';
 
-class ItemEditingTask extends Component {
-  state = { value: '' };
+function ItemEditingTask({ label, onFormatLabel, onEditing }) {
+  const [value, setValue] = useState('');
+  const textInput = useRef(null);
 
-  refInput = createRef();
+  useEffect(() => {
+    setValue(label);
+    textInput.current.focus();
+  }, [label]);
 
-  componentDidMount() {
-    const { label } = this.props;
-    this.setState({ value: label });
-    this.refInput.current.focus();
-  }
-
-  handleSubmit = (e) => {
-    e.preventDefault();
-    const { value } = this.state;
-    const { onFormatLabel } = this.props;
-    onFormatLabel(value);
+  const handlerKeyDown = (e) => {
+    if (e.key === 'Enter') onFormatLabel(value);
+    if (e.key === 'Escape') onEditing();
   };
 
-  handleChange = (e) => {
-    this.setState({ value: e.target.value });
-  };
+  const handlerChange = ({ target: { value: v } }) => setValue(v);
 
-  blur = () => {
-    const { value } = this.state;
-    const { onFormatLabel } = this.props;
-    onFormatLabel(value);
-  };
+  const blur = () => onEditing();
 
-  render() {
-    const { value } = this.state;
-    return (
-      <form onSubmit={this.handleSubmit}>
-        <input
-          type="text"
-          className="edit"
-          value={value}
-          onChange={this.handleChange}
-          onBlur={this.blur}
-          ref={this.refInput}
-        />
-      </form>
-    );
-  }
+  return (
+    <input
+      type="text"
+      className="edit"
+      value={value}
+      onKeyDown={handlerKeyDown}
+      onChange={handlerChange}
+      onBlur={blur}
+      ref={textInput}
+    />
+  );
 }
 
 ItemEditingTask.defaultProps = {
