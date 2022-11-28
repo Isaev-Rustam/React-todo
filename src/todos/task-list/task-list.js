@@ -8,6 +8,7 @@ function TaskList({ todos, onDeleted, onToggleDone, onEditing, onFormatLabel, on
   const listItems = todos.map(({ id, done, editing, label, time }) => (
     <li key={id} className={className({ completed: done, editing })}>
       <Task
+        id={id}
         label={label}
         time={time}
         done={done}
@@ -16,7 +17,7 @@ function TaskList({ todos, onDeleted, onToggleDone, onEditing, onFormatLabel, on
         onToggleDone={() => onToggleDone(id)}
         onEditing={() => onEditing(id)}
         onFormatLabel={(lb) => onFormatLabel(id, lb)}
-        onUpdateTime={(deadline, isCounting) => onUpdateTime(id, deadline, isCounting)}
+        onUpdateTime={onUpdateTime}
       />
     </li>
   ));

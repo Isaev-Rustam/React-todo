@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './app.css';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -80,6 +80,10 @@ export default function App() {
     );
   };
 
+  const OnUpdateTime = useCallback((...ar) => {
+    onUpdateTime(...ar);
+  }, []);
+
   const isVisibleItems = App.filter(todoData, filter);
   const completedTasksCount = App.completedTasksCount(todoData);
 
@@ -93,7 +97,7 @@ export default function App() {
           onEditing={onEditing}
           onDeleted={deleteTask}
           onFormatLabel={onFormatLabel}
-          onUpdateTime={onUpdateTime}
+          onUpdateTime={OnUpdateTime}
         />
         <Footer
           onFilterChange={onFilterChange}
@@ -115,6 +119,7 @@ App.createTodoItem = (label, deadline) => ({
     taskAddTime: Date.now(),
     timeToNow: 'less than 2 seconds',
     deadline,
+    isCounting: false,
   },
 });
 App.completedTasksCount = (ar) => `${ar.filter((item) => !item.done).length}`;

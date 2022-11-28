@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import className from 'classnames';
 
-function Timer({ deadline: dl, onUpdateTime, isCounting: work }) {
+function Timer({ deadline: dl, onUpdateTime, isCounting: work, id }) {
   const [time, setTime] = useState(dl);
-  const [isCounting, setIsCounting] = useState(false);
+  const [isCounting, setIsCounting] = useState(work);
 
   const MINUTE = Timer.getPadTime(Math.floor(time / 60));
   const SECOND = Timer.getPadTime(time - MINUTE * 60);
@@ -18,23 +18,21 @@ function Timer({ deadline: dl, onUpdateTime, isCounting: work }) {
 
   useEffect(() => {
     if (dl <= 0) setTime(3600);
-    onUpdateTime(savedTime.current, isCounting);
     if (isCounting && savedTime.current >= 0) {
-      const id = setInterval(() => {
+      const idTimeout = setInterval(() => {
         if (savedTime.current <= 0) {
           setIsCounting(() => false);
         }
         setTime((tm) => (tm >= 1 ? tm - 1 : 0));
       }, UPDATE_INTERVAL);
-      return () => clearInterval(id);
+      return () => clearInterval(idTimeout);
     }
     return () => {};
   }, [isCounting, dl]);
 
   useEffect(() => {
-    if (work) setIsCounting(() => true);
-    onUpdateTime(savedTime.current, isCounting);
-  }, [work]);
+    onUpdateTime(id, savedTime.current, isCounting);
+  }, [isCounting, onUpdateTime, id, savedTime.current]);
 
   const handlerPlay = () => {
     if (time <= 0) setTime(3600);
@@ -74,10 +72,12 @@ Timer.getPadTime = (time) => time.toString().padStart(2, '0');
 
 Timer.defaultProps = {
   deadline: 60,
+  isCounting: false,
 };
 
 Timer.propTypes = {
   deadline: PropTypes.number,
+  isCounting: PropTypes.bool,
 };
 
 export default Timer;

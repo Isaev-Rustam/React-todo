@@ -6,6 +6,7 @@ import Timer from '../timer';
 
 function Task(props) {
   const {
+    id,
     label,
     onDeleted,
     onToggleDone,
@@ -22,7 +23,7 @@ function Task(props) {
       <input className="toggle" type="checkbox" checked={done} onChange={onToggleDone} />
       <label>
         <span className="title">{label}</span>
-        <Timer deadline={deadline} onUpdateTime={onUpdateTime} isCounting={isCounting} />
+        <Timer deadline={deadline} onUpdateTime={onUpdateTime} isCounting={isCounting} id={id} />
         <span className="description">{timeToNow}</span>
       </label>
       <button aria-label="edit" type="button" className="icon icon-edit" onClick={onEditing} />
